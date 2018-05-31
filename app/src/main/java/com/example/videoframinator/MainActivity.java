@@ -17,6 +17,10 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.VideoView;
 
+import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Mat;
+import org.opencv.videoio.VideoCapture;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -33,13 +37,18 @@ public class MainActivity extends AppCompatActivity {
     ImageView iv_disp;
 
 
+
     private static String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
-//    static {
-//        System.loadLibrary("opencv_java3");
-//    }
+    static {
+        System.loadLibrary("opencv_java3");
+        if(!OpenCVLoader.initDebug())
+            Log.d("Main Activity","OpenCV not loaded");
+        else Log.d("Main Activity","OpenCV loaded");
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
