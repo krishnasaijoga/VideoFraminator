@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onStart() {
         super.onStart();
@@ -63,16 +64,23 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     private void deFrameVideo(String path)
     {
         Uri uri = Uri.parse(path);
         //Log.d("path = ",uri+"");
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         String video_duration="";
+        String frame_rate="";
+        float frames;
         try {
             retriever.setDataSource(this,uri);
             video_duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            frame_rate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE);
+            //frames = (float)(Long.parseLong(video_duration)*Long.parseLong(frame_rate));
             Log.d("Duration of video = ",video_duration);
+            Log.d("frame rate",""+frame_rate);
+            //Log.d("Total Number of Frames",""+frames);
         }
         catch (IllegalArgumentException iae)
         {
@@ -91,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
         int scaleHeight = (int) ( (float) bmpVideoHeight * factor );
         int max = (int) Long.parseLong(video_duration);
 
-        for(int i=0;i<max;i+=1000) {
+        for(int i=0;i<max;i++) {
 
             bmpOriginal = retriever.getFrameAtTime(i*1000,MediaMetadataRetriever.OPTION_CLOSEST);
             bmpVideoHeight = (bmpOriginal==null)?-1:bmpOriginal.getHeight();
@@ -109,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
                 OutputStream out = null;
                 try {
                     out = new FileOutputStream(outputfile);
-                    Log.d("FILE", "Found");
+                    //Log.d("FILE", "Found");
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
@@ -119,13 +127,14 @@ public class MainActivity extends AppCompatActivity {
 
                 try {
                     assert out != null;
-                    Log.d("IMAGE STATUS", "Successful");
+                    //Log.d("IMAGE STATUS", "Successful");
                     out.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
                 lastSavedByteArray = tempByteArray;
+                Log.d("Frame num "," "+i);
 
             }
         }
