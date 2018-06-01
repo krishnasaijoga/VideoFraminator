@@ -14,10 +14,14 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.VideoView;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
@@ -43,8 +47,10 @@ public class MainActivity extends AppCompatActivity {
     VideoView mVideoView;
     ImageView iv_disp;
     List<Bitmap> vid_frames;
+    private CameraBridgeViewBase mOpenCVCamView;
 
 
+    private BaseLoaderCallback mBaseLoaderCallback;
 
     private static String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -58,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +76,28 @@ public class MainActivity extends AppCompatActivity {
 //        dispatchTakeVideoIntent();
         vid_frames = new ArrayList<>();
         iv_disp = findViewById(R.id.disp_iv);
+        mOpenCVCamView = findViewById(R.id.openCVCamView);
+        mOpenCVCamView.setVisibility(SurfaceView.VISIBLE);
+        mOpenCVCamView.setCvCameraViewListener((CameraBridgeViewBase.CvCameraViewListener) this);
+
+
+        mBaseLoaderCallback = new BaseLoaderCallback(this) {
+            @Override
+            public void onManagerConnected(int status) {
+                switch (status)
+                {
+                    case LoaderCallbackInterface.SUCCESS: {
+                        Log.d("OpenCV loaded", "Success");
+                        mOpenCVCamView.enableView();
+                    }
+                    break;
+                    default:{
+                        super.onManagerConnected(status);
+                    }
+                    break;
+                }
+            }
+        };
 
         ActivityCompat.requestPermissions(this,PERMISSIONS_STORAGE,1);
 
@@ -92,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
     private void back_sub()
     {
         try {
-            Bitmap bmp = BitmapFactory.decodeResource(getResources(),R.raw.hello);
+            Bitmap bmp = BitmapFactory.decodeResource(getResources(),R.raw.sherl);
             Mat mat = new Mat(bmp.getWidth(),bmp.getHeight(), CvType.CV_8UC1);
             Utils.bitmapToMat(bmp,mat);
             Imgproc.cvtColor(mat,mat,Imgproc.COLOR_RGB2GRAY);//for making a color image black and white
