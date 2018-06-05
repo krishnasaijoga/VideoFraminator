@@ -18,6 +18,8 @@
         android:layout_height="wrap_content"
         android:text="Play Me!"
         android:onClick="combineFramesPlay" />
+
+
     <org.opencv.android.JavaCameraView
         android:id="@+id/openCVCamView"
         android:layout_width="wrap_content"
@@ -25,5 +27,10 @@
         android:visibility="gone"
         app:show_fps="true"
         app:camera_id="any"/>
+
+    <SeekBar
+        android:id="@+id/hue_sb"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

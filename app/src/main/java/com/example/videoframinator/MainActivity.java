@@ -1,6 +1,7 @@
 package com.example.videoframinator;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -17,6 +18,7 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.VideoView;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -24,10 +26,15 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.Videoio;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -48,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
     ImageView iv_disp;
     List<Bitmap> vid_frames;
     private CameraBridgeViewBase mOpenCVCamView;
+    SeekBar sb_hue;
+    final Context mContext = this;
 
 
     private BaseLoaderCallback mBaseLoaderCallback;
@@ -70,47 +79,66 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        iv_disp = findViewById(R.id.disp_iv);
+        sb_hue = findViewById(R.id.hue_sb);
 //        mVideoView = findViewById(R.id.disp_vv);
 //        capturedImageView = findViewById(R.id.img_disp_iv);
 
 //        dispatchTakeVideoIntent();
-        vid_frames = new ArrayList<>();
-        iv_disp = findViewById(R.id.disp_iv);
-        mOpenCVCamView = findViewById(R.id.openCVCamView);
-        mOpenCVCamView.setVisibility(SurfaceView.VISIBLE);
-        mOpenCVCamView.setCvCameraViewListener((CameraBridgeViewBase.CvCameraViewListener) this);
-
-
-        mBaseLoaderCallback = new BaseLoaderCallback(this) {
-            @Override
-            public void onManagerConnected(int status) {
-                switch (status)
-                {
-                    case LoaderCallbackInterface.SUCCESS: {
-                        Log.d("OpenCV loaded", "Success");
-                        mOpenCVCamView.enableView();
-                    }
-                    break;
-                    default:{
-                        super.onManagerConnected(status);
-                    }
-                    break;
-                }
-            }
-        };
-
-        ActivityCompat.requestPermissions(this,PERMISSIONS_STORAGE,1);
+//        vid_frames = new ArrayList<>();
+//        iv_disp = findViewById(R.id.disp_iv);
+//        mOpenCVCamView = findViewById(R.id.openCVCamView);
+//        mOpenCVCamView.setVisibility(SurfaceView.VISIBLE);
+//        mOpenCVCamView.setCvCameraViewListener((CameraBridgeViewBase.CvCameraViewListener) this);
+//
+//
+//        mBaseLoaderCallback = new BaseLoaderCallback(this) {
+//            @Override
+//            public void onManagerConnected(int status) {
+//                switch (status)
+//                {
+//                    case LoaderCallbackInterface.SUCCESS: {
+//                        Log.d("OpenCV loaded", "Success");
+//                        mOpenCVCamView.enableView();
+//                    }
+//                    break;
+//                    default:{
+//                        super.onManagerConnected(status);
+//                    }
+//                    break;
+//                }
+//            }
+//        };
+//
+//        ActivityCompat.requestPermissions(this,PERMISSIONS_STORAGE,1);
 
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
+    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            if (status == LoaderCallbackInterface.SUCCESS ) {
+                // now we can call opencv code !
+                back_sub();
+            } else {
+                super.onManagerConnected(status);
+            }
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
-
+        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0,this,mLoaderCallback);
         //deFrameVideo("android.resource://"+getPackageName()+"/raw/fight");
 
-        back_sub();
+        //back_sub();
 //        VideoCapture vc = new VideoCapture();
 //        vc.open("android.resource://"+getPackageName()+"/raw/fight");
 //        if(vc.isOpened())
@@ -122,16 +150,56 @@ public class MainActivity extends AppCompatActivity {
     private void back_sub()
     {
         try {
-            Bitmap bmp = BitmapFactory.decodeResource(getResources(),R.raw.sherl);
-            Mat mat = new Mat(bmp.getWidth(),bmp.getHeight(), CvType.CV_8UC1);
-            Utils.bitmapToMat(bmp,mat);
-            Imgproc.cvtColor(mat,mat,Imgproc.COLOR_RGB2GRAY);//for making a color image black and white
-            Utils.matToBitmap(mat,bmp);
-            iv_disp.setImageBitmap(bmp);
-        } catch (NullPointerException ne)
-        {
-            ne.printStackTrace();
-        }
+            //VideoCapture vd = new VideoCapture("android.resource://"+getPackageName()+"/raw/lion");
+                //Log.d("Video Capture : ",""+vd.isOpened());
+            //while(true)
+                //if(!vd.read(img))
+                //break;
+
+//            while(true) {
+//                if (img == null)
+//                    break;
+
+                sb_hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    float low_hue;
+                    Mat img = null;
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        low_hue = (float) ((float)progress*2.55);
+                        Log.d("HUE VALUE ",""+low_hue);
+                        try {
+                            img = Utils.loadResource(mContext, R.raw.elephant);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        Imgproc.cvtColor(img, img, Imgproc.COLOR_BGR2HSV);
+                        Scalar lower = new Scalar(low_hue, 0, 0);
+                        Scalar upper = new Scalar(179, 255, 255);
+                        Mat mask = new Mat(img.rows(), img.cols(), CvType.CV_8UC3);
+                        Core.inRange(img, lower, upper, mask);
+                        Core.bitwise_and(img, mask, img, mask);// TODO: YOU STOPPED RIGHT HERE
+                        Bitmap bmp = Bitmap.createBitmap(img.cols(), img.rows(), Bitmap.Config.ARGB_8888);
+                        Utils.matToBitmap(img, bmp);
+                        iv_disp.setImageBitmap(bmp);
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    }
+                });
+                //vd.release();
+//                }
+            } catch (NullPointerException ne) {
+                ne.printStackTrace();
+            } catch (CvException ce) {
+                ce.printStackTrace();
+            }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
