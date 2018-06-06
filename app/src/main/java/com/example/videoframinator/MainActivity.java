@@ -10,6 +10,7 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
@@ -55,8 +56,10 @@ public class MainActivity extends AppCompatActivity {
     ImageView iv_disp;
     List<Bitmap> vid_frames;
     private CameraBridgeViewBase mOpenCVCamView;
-    SeekBar sb_hue;
+    SeekBar sb_low_hue,sb_high_hue,sb_low_sat,sb_high_sat,sb_low_value,sb_high_value;
     final Context mContext = this;
+    float low_hue,high_hue=179,low_sat=0,high_sat=255,low_value=0,high_value=255;
+    Mat img = null,hsv=null;
 
 
     private BaseLoaderCallback mBaseLoaderCallback;
@@ -65,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
+
+    //TO LOAD OPENCV LIBRARY
     static {
         System.loadLibrary("opencv_java3");
         if(!OpenCVLoader.initDebug())
@@ -80,7 +85,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         iv_disp = findViewById(R.id.disp_iv);
-        sb_hue = findViewById(R.id.hue_sb);
+        sb_low_hue = findViewById(R.id.hue_low_sb);
+        sb_high_hue =findViewById(R.id.hue_high_sb);
+        sb_low_sat = findViewById(R.id.sat_low_sb);
+        sb_high_sat = findViewById(R.id.sat_high_sb);
+        sb_low_value = findViewById(R.id.value_low_sb);
+        sb_high_value = findViewById(R.id.value_high_sb);
+
 //        mVideoView = findViewById(R.id.disp_vv);
 //        capturedImageView = findViewById(R.id.img_disp_iv);
 
@@ -119,6 +130,14 @@ public class MainActivity extends AppCompatActivity {
         public void onManagerConnected(int status) {
             if (status == LoaderCallbackInterface.SUCCESS ) {
                 // now we can call opencv code !
+//                try {
+//                    Mat start = Utils.loadResource(mContext,R.raw.harry);
+//                    Bitmap temp_bmp = Bitmap.createBitmap(start.cols(),start.rows(),Bitmap.Config.ARGB_8888);
+//                    Utils.matToBitmap(start,temp_bmp);
+//                    iv_disp.setImageBitmap(temp_bmp);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
                 back_sub();
             } else {
                 super.onManagerConnected(status);
@@ -126,11 +145,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-    }
 
     @Override
     protected void onStart() {
@@ -150,47 +164,112 @@ public class MainActivity extends AppCompatActivity {
     private void back_sub()
     {
         try {
-            //VideoCapture vd = new VideoCapture("android.resource://"+getPackageName()+"/raw/lion");
-                //Log.d("Video Capture : ",""+vd.isOpened());
-            //while(true)
-                //if(!vd.read(img))
-                //break;
-
-//            while(true) {
-//                if (img == null)
-//                    break;
-
-                sb_hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                    float low_hue;
-                    Mat img = null;
+                //SEEKBAR TO SET LOW FOR HUE
+                sb_low_hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                     @Override
                     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                         low_hue = (float) ((float)progress*2.55);
                         Log.d("HUE VALUE ",""+low_hue);
-                        try {
-                            img = Utils.loadResource(mContext, R.raw.elephant);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        Imgproc.cvtColor(img, img, Imgproc.COLOR_BGR2HSV);
-                        Scalar lower = new Scalar(low_hue, 0, 0);
-                        Scalar upper = new Scalar(179, 255, 255);
-                        Mat mask = new Mat(img.rows(), img.cols(), CvType.CV_8UC3);
-                        Core.inRange(img, lower, upper, mask);
-                        Core.bitwise_and(img, mask, img, mask);// TODO: YOU STOPPED RIGHT HERE
-                        Bitmap bmp = Bitmap.createBitmap(img.cols(), img.rows(), Bitmap.Config.ARGB_8888);
-                        Utils.matToBitmap(img, bmp);
-                        iv_disp.setImageBitmap(bmp);
                     }
 
                     @Override
                     public void onStartTrackingTouch(SeekBar seekBar) {
-
+                        startChanges();
                     }
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
+                        setChanges();
+                    }
+                });
 
+                //SEEKBAR TO SET HIGH FOR HUE
+                sb_high_hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        high_hue = (float) ((float)progress*2.55);
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+                        startChanges();
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        setChanges();
+                    }
+                });
+
+                //SEEKBAR TO SET LOW FOR SATURATION
+                sb_low_sat.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        low_sat = (float) ((float)progress*2.55);
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+                        startChanges();
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        setChanges();
+                    }
+                });
+
+                //SEEKBAR TO SET HIGH FOR SATURATION
+                sb_high_sat.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        high_sat = (float) ((float)progress*2.55);
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+                        startChanges();
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        setChanges();
+                    }
+                });
+
+                //SEEKBAR TO SET LOW FOR VALUE
+                sb_low_value.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        low_value = (float) ((float)progress*2.55);
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+                        startChanges();
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        setChanges();
+                    }
+                });
+
+                //SEEKBAR TO SET HIGH FOR VALUE
+                sb_high_value.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        high_value = (float) ((float)progress*2.55);
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+                        startChanges();
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        setChanges();
                     }
                 });
                 //vd.release();
@@ -200,6 +279,41 @@ public class MainActivity extends AppCompatActivity {
             } catch (CvException ce) {
                 ce.printStackTrace();
             }
+    }
+
+
+
+    private void startChanges()
+    {
+        try {
+            String path = Environment.getExternalStorageDirectory().getPath()+"/sdcard/android/lion";
+            VideoCapture vd = new VideoCapture(path);
+            if(!vd.isOpened())
+                Log.d("Camera Opened ","FALSE");
+            img = Utils.loadResource(mContext, R.raw.harry);
+            hsv = new Mat(img.rows(),img.cols(),img.type());
+            Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setChanges()
+    {
+        Scalar lower = new Scalar(low_hue, low_sat, low_value);
+        Scalar upper = new Scalar(high_hue, high_sat, high_value);
+        //Log.d("TYPE OF IMG ",""+img.type());
+        Mat mask = new Mat(hsv.size(), hsv.type());
+        Mat mask_inv = new Mat(hsv.size(), hsv.type());
+        Core.inRange(hsv, lower, upper, mask);
+        Mat res = new Mat(img.rows(),img.cols(),img.type());
+        Core.bitwise_not(mask,mask_inv);
+        Core.bitwise_and(img, img, res, mask_inv);
+        Bitmap bmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
+        Mat result = new Mat(img.rows(),img.cols(),img.type());
+        Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
+        Utils.matToBitmap(result, bmp);
+        iv_disp.setImageBitmap(bmp);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -281,23 +395,6 @@ public class MainActivity extends AppCompatActivity {
 
         //iv_disp.setImageBitmap(bmpOriginal);
         retriever.release();
-    }
-
-    private void dispatchTakeVideoIntent() {
-        Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-        if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takeVideoIntent, REQUEST_VIDEO_CAPTURE);
-        }
-    }
-
-    public void combineFramesPlay(View view) {
-//        String filePath="fight_0.jpeg";
-//        File inputFile = new File("/sdcard/android/",filePath);
-//        Bitmap bitmap = BitmapFactory.decodeFile("/sdcard/android/fight_0.jpeg");
-//        iv_disp.setImageBitmap(bitmap);
-//        SequenceEncoder
-
-        //back_sub();
     }
 
 //    @Override
