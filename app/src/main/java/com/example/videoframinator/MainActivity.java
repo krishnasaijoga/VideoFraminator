@@ -1,6 +1,7 @@
 package com.example.videoframinator;
 
 import android.Manifest;
+import android.app.NativeActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
@@ -43,13 +44,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.annotation.Native;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
     static final int REQUEST_VIDEO_CAPTURE = 1;
     VideoView mVideoView;
@@ -69,6 +71,10 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
 
+
+    private CameraBridgeViewBase mCvCamView;
+    Mat matInput,matOutput;
+
     //TO LOAD OPENCV LIBRARY
     static {
         System.loadLibrary("opencv_java3");
@@ -78,6 +84,20 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private BaseLoaderCallback mLoaderCallback2 = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status)
+            {
+                case LoaderCallbackInterface.SUCCESS:
+                    mCvCamView.enableView();
+                    back_sub();
+                    break;
+                default:super.onManagerConnected(status);
+                    break;
+            }
+        }
+    };
 
 
     @Override
@@ -91,6 +111,13 @@ public class MainActivity extends AppCompatActivity {
         sb_high_sat = findViewById(R.id.sat_high_sb);
         sb_low_value = findViewById(R.id.value_low_sb);
         sb_high_value = findViewById(R.id.value_high_sb);
+
+        mCvCamView = findViewById(R.id.live_cv);
+        mCvCamView.setVisibility(SurfaceView.VISIBLE);
+        mCvCamView.setCvCameraViewListener(this);
+        mCvCamView.setCameraIndex(1); // front-camera(1),  back-camera(0)
+        mLoaderCallback2.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+
 
 //        mVideoView = findViewById(R.id.disp_vv);
 //        capturedImageView = findViewById(R.id.img_disp_iv);
@@ -125,31 +152,59 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            if (status == LoaderCallbackInterface.SUCCESS ) {
-                // now we can call opencv code !
-//                try {
-//                    Mat start = Utils.loadResource(mContext,R.raw.harry);
-//                    Bitmap temp_bmp = Bitmap.createBitmap(start.cols(),start.rows(),Bitmap.Config.ARGB_8888);
-//                    Utils.matToBitmap(start,temp_bmp);
-//                    iv_disp.setImageBitmap(temp_bmp);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-                back_sub();
-            } else {
-                super.onManagerConnected(status);
-            }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        super.onResume();
+
+        if (!OpenCVLoader.initDebug()) {
+            Log.d(" ", "onResume :: Internal OpenCV library not found.");
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_2_0, this, mLoaderCallback2);
+        } else {
+            Log.d(" ", "onResume :: OpenCV library found inside package. Using it!");
+            mLoaderCallback2.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
-    };
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mCvCamView!=null)
+            mCvCamView.disableView();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mCvCamView!=null)
+            mCvCamView.disableView();
+    }
+
+//    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+//        @Override
+//        public void onManagerConnected(int status) {
+//            if (status == LoaderCallbackInterface.SUCCESS ) {
+//                // now we can call opencv code !
+////                try {
+////                    Mat start = Utils.loadResource(mContext,R.raw.harry);
+////                    Bitmap temp_bmp = Bitmap.createBitmap(start.cols(),start.rows(),Bitmap.Config.ARGB_8888);
+////                    Utils.matToBitmap(start,temp_bmp);
+////                    iv_disp.setImageBitmap(temp_bmp);
+////                } catch (IOException e) {
+////                    e.printStackTrace();
+////                }
+//                back_sub();
+//            } else {
+//                super.onManagerConnected(status);
+//            }
+//        }
+//    };
 
 
     @Override
     protected void onStart() {
         super.onStart();
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0,this,mLoaderCallback);
+        //OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0,this,mLoaderCallback);
         //deFrameVideo("android.resource://"+getPackageName()+"/raw/fight");
 
         //back_sub();
@@ -286,14 +341,17 @@ public class MainActivity extends AppCompatActivity {
     private void startChanges()
     {
         try {
-            String path = Environment.getExternalStorageDirectory().getPath()+"/sdcard/android/lion";
-            VideoCapture vd = new VideoCapture(path);
-            if(!vd.isOpened())
-                Log.d("Camera Opened ","FALSE");
-            img = Utils.loadResource(mContext, R.raw.harry);
-            hsv = new Mat(img.rows(),img.cols(),img.type());
-            Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
-        } catch (IOException e) {
+//            String path = Environment.getExternalStorageDirectory().getPath()+"/sdcard/android/lion";// TODO : Try to open a video using VideoCapture Or shift to using FFmpeg
+//            VideoCapture vd = new VideoCapture(path);
+//            if(!vd.isOpened())
+//                Log.d("Camera Opened ","FALSE");
+//            Mat vidFrame = new Mat();
+//            vd.read(vidFrame);
+            //img = Utils.loadResource(mContext, R.raw.harry);
+
+            hsv = new Mat(matOutput.rows(),matOutput.cols(),matOutput.type());
+            Imgproc.cvtColor(matOutput, hsv, Imgproc.COLOR_RGB2HSV);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -306,95 +364,116 @@ public class MainActivity extends AppCompatActivity {
         Mat mask = new Mat(hsv.size(), hsv.type());
         Mat mask_inv = new Mat(hsv.size(), hsv.type());
         Core.inRange(hsv, lower, upper, mask);
-        Mat res = new Mat(img.rows(),img.cols(),img.type());
+        Mat res = new Mat(matOutput.rows(),matOutput.cols(),matOutput.type());
         Core.bitwise_not(mask,mask_inv);
-        Core.bitwise_and(img, img, res, mask_inv);
+        Core.bitwise_and(matOutput, matOutput, res, mask_inv);
         Bitmap bmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
-        Mat result = new Mat(img.rows(),img.cols(),img.type());
-        Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
-        Utils.matToBitmap(result, bmp);
-        iv_disp.setImageBitmap(bmp);
+        Mat result = new Mat(matOutput.rows(),matOutput.cols(),matOutput.type());
+        //Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
+        Utils.matToBitmap(res, bmp);
+        res.copyTo(matOutput);
+        //iv_disp.setImageBitmap(bmp);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    private void deFrameVideo(String path)
-    {
-        Uri uri = Uri.parse(path);
-        //Log.d("path = ",uri+"");
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        String video_duration="";
-        String frame_rate="";
-        float frames;
-        try {
-            retriever.setDataSource(this,uri);
-            video_duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            frame_rate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE);
-            //frames = (float)(Long.parseLong(video_duration)*Long.parseLong(frame_rate));
-            Log.d("Duration of video = ",video_duration);
-            Log.d("frame rate",""+frame_rate);
-            //Log.d("Total Number of Frames",""+frames);
-        }
-        catch (IllegalArgumentException iae)
-        {
-            Log.d("Status","NOPE");
-            iae.printStackTrace();
-        }
+//    @RequiresApi(api = Build.VERSION_CODES.M)
+//    private void deFrameVideo(String path)
+//    {
+//        Uri uri = Uri.parse(path);
+//        //Log.d("path = ",uri+"");
+//        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+//        String video_duration="";
+//        String frame_rate="";
+//        float frames;
+//        try {
+//            retriever.setDataSource(this,uri);
+//            video_duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+//            frame_rate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE);
+//            //frames = (float)(Long.parseLong(video_duration)*Long.parseLong(frame_rate));
+//            Log.d("Duration of video = ",video_duration);
+//            Log.d("frame rate",""+frame_rate);
+//            //Log.d("Total Number of Frames",""+frames);
+//        }
+//        catch (IllegalArgumentException iae)
+//        {
+//            Log.d("Status","NOPE");
+//            iae.printStackTrace();
+//        }
+//
+//
+//        Bitmap bmpOriginal = retriever.getFrameAtTime(0);
+//        int bmpVideoHeight = bmpOriginal.getHeight();
+//        int bmpVideoWidth = bmpOriginal.getWidth();
+//        byte [] lastSavedByteArray = new byte[0];
+//
+//        float factor = 20f;
+//        int scaleWidth = (int) ( (float) bmpVideoWidth * factor );
+//        int scaleHeight = (int) ( (float) bmpVideoHeight * factor );
+//        int max = (int) Long.parseLong(video_duration);
+//
+//        for(int i=0;i<max;i++) {
+//
+//            bmpOriginal = retriever.getFrameAtTime(i*1000,MediaMetadataRetriever.OPTION_CLOSEST);
+//            bmpVideoHeight = (bmpOriginal==null)?-1:bmpOriginal.getHeight();
+//            bmpVideoWidth = (bmpOriginal==null)?-1:bmpOriginal.getWidth();
+//            int byteCount = bmpVideoHeight*bmpVideoWidth*4;
+//            ByteBuffer tempByteBuffer = ByteBuffer.allocate(byteCount);
+//            if (bmpOriginal == null)
+//                continue;
+//            bmpOriginal.copyPixelsToBuffer(tempByteBuffer);
+//            byte[] tempByteArray = tempByteBuffer.array();
+//
+//            if(!Arrays.equals(tempByteArray,lastSavedByteArray)) {
+//
+////                File outputfile = new File("/sdcard/android/", "fight_"+i+".jpeg");
+////                OutputStream out = null;
+////                try {
+////                    out = new FileOutputStream(outputfile);
+////                    //Log.d("FILE", "Found");
+////                } catch (FileNotFoundException e) {
+////                    e.printStackTrace();
+////                }
+//
+//                Bitmap bmpScaledSize = Bitmap.createScaledBitmap(bmpOriginal, scaleWidth, scaleHeight, false);
+//                vid_frames.add(bmpScaledSize);
+//                //bmpScaledSize.compress(Bitmap.CompressFormat.PNG, 100, out);
+//
+////                try {
+////                    assert out != null;
+////                    //Log.d("IMAGE STATUS", "Successful");
+////                    out.close();
+////                } catch (IOException e) {
+////                    e.printStackTrace();
+////                }
+//
+//                lastSavedByteArray = tempByteArray;
+//                Log.d("Frame num "," "+i);
+//
+//            }
+//            Log.e("Time "," "+i);
+//        }
+//
+//        //iv_disp.setImageBitmap(bmpOriginal);
+//        retriever.release();
+//    }
 
+    @Override
+    public void onCameraViewStarted(int width, int height) {
+        if (matOutput==null || matOutput.empty())
+            matOutput = new Mat(height,width,CvType.CV_8UC4,new Scalar(255,0,0,255));
+    }
 
-        Bitmap bmpOriginal = retriever.getFrameAtTime(0);
-        int bmpVideoHeight = bmpOriginal.getHeight();
-        int bmpVideoWidth = bmpOriginal.getWidth();
-        byte [] lastSavedByteArray = new byte[0];
+    @Override
+    public void onCameraViewStopped() {
+    }
 
-        float factor = 20f;
-        int scaleWidth = (int) ( (float) bmpVideoWidth * factor );
-        int scaleHeight = (int) ( (float) bmpVideoHeight * factor );
-        int max = (int) Long.parseLong(video_duration);
-
-        for(int i=0;i<max;i++) {
-
-            bmpOriginal = retriever.getFrameAtTime(i*1000,MediaMetadataRetriever.OPTION_CLOSEST);
-            bmpVideoHeight = (bmpOriginal==null)?-1:bmpOriginal.getHeight();
-            bmpVideoWidth = (bmpOriginal==null)?-1:bmpOriginal.getWidth();
-            int byteCount = bmpVideoHeight*bmpVideoWidth*4;
-            ByteBuffer tempByteBuffer = ByteBuffer.allocate(byteCount);
-            if (bmpOriginal == null)
-                continue;
-            bmpOriginal.copyPixelsToBuffer(tempByteBuffer);
-            byte[] tempByteArray = tempByteBuffer.array();
-
-            if(!Arrays.equals(tempByteArray,lastSavedByteArray)) {
-
-//                File outputfile = new File("/sdcard/android/", "fight_"+i+".jpeg");
-//                OutputStream out = null;
-//                try {
-//                    out = new FileOutputStream(outputfile);
-//                    //Log.d("FILE", "Found");
-//                } catch (FileNotFoundException e) {
-//                    e.printStackTrace();
-//                }
-
-                Bitmap bmpScaledSize = Bitmap.createScaledBitmap(bmpOriginal, scaleWidth, scaleHeight, false);
-                vid_frames.add(bmpScaledSize);
-                //bmpScaledSize.compress(Bitmap.CompressFormat.PNG, 100, out);
-
-//                try {
-//                    assert out != null;
-//                    //Log.d("IMAGE STATUS", "Successful");
-//                    out.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-
-                lastSavedByteArray = tempByteArray;
-                Log.d("Frame num "," "+i);
-
-            }
-            Log.e("Time "," "+i);
-        }
-
-        //iv_disp.setImageBitmap(bmpOriginal);
-        retriever.release();
+    @Override
+    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+        matInput = inputFrame.rgba();
+//        matOutput = new Mat(matInput.getNativeObjAddr());
+        matInput.copyTo(matOutput);
+        if(matOutput!=null)
+            Log.d("MATOUTPUT ","NOT NULL");
+        return matOutput;
     }
 
 //    @Override
