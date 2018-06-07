@@ -510,8 +510,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     public void change_cam(View view) {
         if (camera)
-            mCvCamView.setCameraIndex(1); // front-camera(1),  back-camera(0)
-        else mCvCamView.setCameraIndex(0);
+            mCvCamView.setCameraIndex(0); // front-camera(1),  back-camera(0)
+        else mCvCamView.setCameraIndex(1);
         camera = !camera;
     }
 }
