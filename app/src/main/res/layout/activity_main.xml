@@ -18,12 +18,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="center">
-    <ImageView
-        android:id="@+id/disp-iv"
-        android:layout_gravity="center"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:contentDescription="TODO" />
 
     <TextView
         android:text="low_hue"
@@ -81,5 +75,11 @@
         android:id="@+id/value_high_sb"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+        <Button
+            android:id="@+id/change_cam_but"
+            android:onClick="change_cam"
+            android:text="Change Camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
     </LinearLayout>
 </RelativeLayout>

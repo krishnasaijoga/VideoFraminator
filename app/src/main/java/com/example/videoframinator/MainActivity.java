@@ -54,23 +54,10 @@ import java.util.List;
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
 public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
-    static final int REQUEST_VIDEO_CAPTURE = 1;
-    VideoView mVideoView;
-    ImageView iv_disp;
-    List<Bitmap> vid_frames;
-    private CameraBridgeViewBase mOpenCVCamView;
     SeekBar sb_low_hue,sb_high_hue,sb_low_sat,sb_high_sat,sb_low_value,sb_high_value;
-    final Context mContext = this;
-    float low_hue,high_hue=179,low_sat=0,high_sat=255,low_value=0,high_value=255;
+    float low_hue,high_hue=255,low_sat=0,high_sat=255,low_value=0,high_value=255;
     Mat img = null,hsv=null;
-
-
-    private BaseLoaderCallback mBaseLoaderCallback;
-
-    private static String[] PERMISSIONS_STORAGE = {
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-    };
+    boolean camera = true;
 
 
     private CameraBridgeViewBase mCvCamView;
@@ -105,7 +92,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        iv_disp = findViewById(R.id.disp_iv);
         sb_low_hue = findViewById(R.id.hue_low_sb);
         sb_high_hue =findViewById(R.id.hue_high_sb);
         sb_low_sat = findViewById(R.id.sat_low_sb);
@@ -220,8 +206,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     }
 
-    private void back_sub()
-    {
+    private void back_sub() {
         try {
                 //SEEKBAR TO SET LOW FOR HUE
                 sb_low_hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -473,77 +458,61 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        matInput = inputFrame.rgba();
-        Mat matT = matInput.t();
-        Core.flip(matInput.t(),matT,-1);
-        Imgproc.resize(matT,matInput,matInput.size());
-//        matOutput = new Mat(matInput.getNativeObjAddr());
-        try {
-//            String path = Environment.getExternalStorageDirectory().getPath()+"/sdcard/android/lion";// TODO : Try to open a video using VideoCapture Or shift to using FFmpeg
-//            VideoCapture vd = new VideoCapture(path);
-//            if(!vd.isOpened())
-//                Log.d("Camera Opened ","FALSE");
-//            Mat vidFrame = new Mat();
-//            vd.read(vidFrame);
-            //img = Utils.loadResource(mContext, R.raw.harry);
+        matInput = inputFrame.rgba();   //  recieved frame as Mat object
 
+        //  CameraBridgeViewBase by default works in landscape mode
+        //  Here we are not converting it into potrait but the Mat object values are rotated anticlockwise for front camera
+        Mat matT = matInput.t();//Transposes a Mat
+
+        //  Flips a 2D array around vertical, horizontal, or both axes
+        //Flag to specify how to flip the array. 0 means flipping around the x-axis. Positive value (for example, 1) means flipping around y-axis. Negative value (for example, -1) means flipping around both axes
+        if (camera)
+            Core.flip(matInput.t(),matT,-1);// front-camera(-1),  back-camera(1)
+        else Core.flip(matInput.t(),matT,1);// front-camera(-1),  back-camera(1)
+
+        Imgproc.resize(matT,matInput,matInput.size());//    resizes source according to given size and places it in destination
+
+        try {
             hsv = new Mat(matInput.rows(),matInput.cols(),matInput.type());
-            Imgproc.cvtColor(matInput, hsv, Imgproc.COLOR_RGB2HSV);
+            Imgproc.cvtColor(matInput, hsv, Imgproc.COLOR_RGB2HSV);//   converts source Mat to given colorspace covnversion code
+            //here from RGB colorspace to HSV colorspace
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        Scalar lower = new Scalar(low_hue, low_sat, low_value);
-        Scalar upper = new Scalar(high_hue, high_sat, high_value);
-        //Log.d("TYPE OF IMG ",""+img.type());
+        Scalar lower = new Scalar(low_hue, low_sat, low_value);//   creates scalar object with low hue, saturation and value
+        Scalar upper = new Scalar(high_hue, high_sat, high_value);//    creates scalar object with high hue, saturation and value
+
         Mat mask = new Mat(hsv.size(), hsv.type());
         Mat mask_inv = new Mat(hsv.size(), hsv.type());
-        Core.inRange(hsv, lower, upper, mask);
+
+        Core.inRange(hsv, lower, upper, mask);//    Checks if array elements lie between the elements of two other arrays.
+        //  For every element of a single-channel input array:
+        //  dst(I)= lowerb(I)_0 <= src(I)_0 <= upperb(I)_0
+
+        Core.bitwise_not(mask,mask_inv);//  applies bitwise not to src and stores result in destination
+
         Mat res = new Mat(matInput.rows(),matInput.cols(),matInput.type());
-        Core.bitwise_not(mask,mask_inv);
-        Core.bitwise_and(matInput, matInput, res, mask_inv);
-        Bitmap bmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
+        Core.bitwise_and(matInput, matInput, res, mask_inv);//  Calculates the per-element bit-wise conjunction of two arrays or an array and a scalar
+        //  dst(I) = src1(I) & src2(I) if mask(I) != 0
+
         Mat result = new Mat(matInput.rows(),matInput.cols(),matInput.type());
         //Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
-        Utils.matToBitmap(res, bmp);
-        res.copyTo(matOutput);
-        //matInput.copyTo(matOutput);
+
+        Bitmap bmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);//    Creating a bitmap similar to Mat and with ARGB_8888 conguration
+        Utils.matToBitmap(res, bmp);//  Converts a mat to bitmap
+        res.copyTo(matOutput);//    copies result into matOutput
+
         if(matOutput!=null)
             Log.d("MATOUTPUT ","NOT NULL");
-        return matOutput;
+        return matOutput;// matOutput is returned for display
     }
 
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-////        super.onActivityResult(requestCode, resultCode, data);
-//        if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == RESULT_OK) {
-//            Uri videoUri = data.getData();
-//            mVideoView.setVideoURI(videoUri);
-//            mVideoView.start();
-//            mVideoView.setOnClickListener(new View.OnClickListener() {
-//                boolean paused = false;
-//                @Override
-//                public void onClick(View v) {
-//                    if(v == mVideoView)
-//                        Log.d("V==mVideoView","true");
-//                    else
-//                        Log.d("V==mVideoView","false");
-//                    if (!paused) {
-//                        mVideoView.pause();
-//                        paused = true;
-//                    }
-//                    else {
-//                        if (mVideoView.isPlaying())
-//                            mVideoView.resume();
-//                        else
-//                            mVideoView.start();
-//                        paused = false;
-//                    }
-//
-//                }
-//            });
-//            Log.d("VIDEO PLAYING STATUS",""+mVideoView.isPlaying());
-//        }
-//    }
+    public void change_cam(View view) {
+        if (camera)
+            mCvCamView.setCameraIndex(1); // front-camera(1),  back-camera(0)
+        else mCvCamView.setCameraIndex(0);
+        camera = !camera;
+    }
 }
 
