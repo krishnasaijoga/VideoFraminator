@@ -19,6 +19,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.VideoView;
@@ -111,6 +112,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         sb_high_sat = findViewById(R.id.sat_high_sb);
         sb_low_value = findViewById(R.id.value_low_sb);
         sb_high_value = findViewById(R.id.value_high_sb);
+
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         mCvCamView = findViewById(R.id.live_cv);
         mCvCamView.setVisibility(SurfaceView.VISIBLE);
@@ -229,12 +233,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
                     @Override
                     public void onStartTrackingTouch(SeekBar seekBar) {
-                        startChanges();
+                        //startChanges();
                     }
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        setChanges();
+                        //setChanges();
                     }
                 });
 
@@ -247,12 +251,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
                     @Override
                     public void onStartTrackingTouch(SeekBar seekBar) {
-                        startChanges();
+                        //startChanges();
                     }
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        setChanges();
+                        //setChanges();
                     }
                 });
 
@@ -265,12 +269,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
                     @Override
                     public void onStartTrackingTouch(SeekBar seekBar) {
-                        startChanges();
+                        //startChanges();
                     }
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        setChanges();
+                        //setChanges();
                     }
                 });
 
@@ -283,12 +287,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
                     @Override
                     public void onStartTrackingTouch(SeekBar seekBar) {
-                        startChanges();
+                        //startChanges();
                     }
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        setChanges();
+                        //setChanges();
                     }
                 });
 
@@ -301,12 +305,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
                     @Override
                     public void onStartTrackingTouch(SeekBar seekBar) {
-                        startChanges();
+                        //startChanges();
                     }
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        setChanges();
+                        //setChanges();
                     }
                 });
 
@@ -319,12 +323,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
                     @Override
                     public void onStartTrackingTouch(SeekBar seekBar) {
-                        startChanges();
+                        //startChanges();
                     }
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        setChanges();
+                        //setChanges();
                     }
                 });
                 //vd.release();
@@ -338,42 +342,42 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
 
 
-    private void startChanges()
-    {
-        try {
-//            String path = Environment.getExternalStorageDirectory().getPath()+"/sdcard/android/lion";// TODO : Try to open a video using VideoCapture Or shift to using FFmpeg
-//            VideoCapture vd = new VideoCapture(path);
-//            if(!vd.isOpened())
-//                Log.d("Camera Opened ","FALSE");
-//            Mat vidFrame = new Mat();
-//            vd.read(vidFrame);
-            //img = Utils.loadResource(mContext, R.raw.harry);
-
-            hsv = new Mat(matOutput.rows(),matOutput.cols(),matOutput.type());
-            Imgproc.cvtColor(matOutput, hsv, Imgproc.COLOR_RGB2HSV);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setChanges()
-    {
-        Scalar lower = new Scalar(low_hue, low_sat, low_value);
-        Scalar upper = new Scalar(high_hue, high_sat, high_value);
-        //Log.d("TYPE OF IMG ",""+img.type());
-        Mat mask = new Mat(hsv.size(), hsv.type());
-        Mat mask_inv = new Mat(hsv.size(), hsv.type());
-        Core.inRange(hsv, lower, upper, mask);
-        Mat res = new Mat(matOutput.rows(),matOutput.cols(),matOutput.type());
-        Core.bitwise_not(mask,mask_inv);
-        Core.bitwise_and(matOutput, matOutput, res, mask_inv);
-        Bitmap bmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
-        Mat result = new Mat(matOutput.rows(),matOutput.cols(),matOutput.type());
-        //Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
-        Utils.matToBitmap(res, bmp);
-        res.copyTo(matOutput);
-        //iv_disp.setImageBitmap(bmp);
-    }
+//    private void startChanges()
+//    {
+//        try {
+////            String path = Environment.getExternalStorageDirectory().getPath()+"/sdcard/android/lion";// TODO : Try to open a video using VideoCapture Or shift to using FFmpeg
+////            VideoCapture vd = new VideoCapture(path);
+////            if(!vd.isOpened())
+////                Log.d("Camera Opened ","FALSE");
+////            Mat vidFrame = new Mat();
+////            vd.read(vidFrame);
+//            //img = Utils.loadResource(mContext, R.raw.harry);
+//
+//            hsv = new Mat(matInput.rows(),matInput.cols(),matInput.type());
+//            Imgproc.cvtColor(matInput, hsv, Imgproc.COLOR_RGB2HSV);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    private void setChanges()
+//    {
+//        Scalar lower = new Scalar(low_hue, low_sat, low_value);
+//        Scalar upper = new Scalar(high_hue, high_sat, high_value);
+//        //Log.d("TYPE OF IMG ",""+img.type());
+//        Mat mask = new Mat(hsv.size(), hsv.type());
+//        Mat mask_inv = new Mat(hsv.size(), hsv.type());
+//        Core.inRange(hsv, lower, upper, mask);
+//        Mat res = new Mat(matInput.rows(),matInput.cols(),matInput.type());
+//        Core.bitwise_not(mask,mask_inv);
+//        Core.bitwise_and(matInput, matInput, res, mask_inv);
+//        Bitmap bmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
+//        Mat result = new Mat(matInput.rows(),matInput.cols(),matInput.type());
+//        //Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
+//        Utils.matToBitmap(res, bmp);
+//        res.copyTo(matInput);
+//        //iv_disp.setImageBitmap(bmp);
+//    }
 
 //    @RequiresApi(api = Build.VERSION_CODES.M)
 //    private void deFrameVideo(String path)
@@ -459,7 +463,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public void onCameraViewStarted(int width, int height) {
         if (matOutput==null || matOutput.empty())
-            matOutput = new Mat(height,width,CvType.CV_8UC4,new Scalar(255,0,0,255));
+            matOutput = new Mat(height,width,CvType.CV_8UC4,new Scalar(0,0,0,0));
+
     }
 
     @Override
@@ -469,8 +474,40 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         matInput = inputFrame.rgba();
+        Mat matT = matInput.t();
+        Core.flip(matInput.t(),matT,-1);
+        Imgproc.resize(matT,matInput,matInput.size());
 //        matOutput = new Mat(matInput.getNativeObjAddr());
-        matInput.copyTo(matOutput);
+        try {
+//            String path = Environment.getExternalStorageDirectory().getPath()+"/sdcard/android/lion";// TODO : Try to open a video using VideoCapture Or shift to using FFmpeg
+//            VideoCapture vd = new VideoCapture(path);
+//            if(!vd.isOpened())
+//                Log.d("Camera Opened ","FALSE");
+//            Mat vidFrame = new Mat();
+//            vd.read(vidFrame);
+            //img = Utils.loadResource(mContext, R.raw.harry);
+
+            hsv = new Mat(matInput.rows(),matInput.cols(),matInput.type());
+            Imgproc.cvtColor(matInput, hsv, Imgproc.COLOR_RGB2HSV);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Scalar lower = new Scalar(low_hue, low_sat, low_value);
+        Scalar upper = new Scalar(high_hue, high_sat, high_value);
+        //Log.d("TYPE OF IMG ",""+img.type());
+        Mat mask = new Mat(hsv.size(), hsv.type());
+        Mat mask_inv = new Mat(hsv.size(), hsv.type());
+        Core.inRange(hsv, lower, upper, mask);
+        Mat res = new Mat(matInput.rows(),matInput.cols(),matInput.type());
+        Core.bitwise_not(mask,mask_inv);
+        Core.bitwise_and(matInput, matInput, res, mask_inv);
+        Bitmap bmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);
+        Mat result = new Mat(matInput.rows(),matInput.cols(),matInput.type());
+        //Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
+        Utils.matToBitmap(res, bmp);
+        res.copyTo(matOutput);
+        //matInput.copyTo(matOutput);
         if(matOutput!=null)
             Log.d("MATOUTPUT ","NOT NULL");
         return matOutput;
