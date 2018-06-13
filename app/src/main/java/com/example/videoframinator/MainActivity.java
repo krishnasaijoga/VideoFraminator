@@ -39,12 +39,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     SeekBar sb_low_hue,sb_high_hue,sb_low_sat,sb_high_sat,sb_low_value,sb_high_value;
     float low_hue,high_hue=255,low_sat=0,high_sat=255,low_value=0,high_value=255;
     Mat img = null,hsv=null;
-    boolean camera = true;
-    boolean record = false;
-    List<Mat> recording;
-    double FPS;
+    static boolean camera = true;
+    static boolean record = false;
+    static List<Mat> recording;
+    static double FPS;
     Time start,end;
-    Context mContext;
+    static Context mContext;
+    static int count=0;
 
 
     private CameraBridgeViewBase mCvCamView;
@@ -88,6 +89,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
 //        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 //        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        mContext = this;
 
         mCvCamView = findViewById(R.id.live_cv);
         mCvCamView.setVisibility(SurfaceView.VISIBLE);
@@ -95,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         mCvCamView.setCameraIndex(1); // front-camera(1),  back-camera(0)
         mLoaderCallback2.onManagerConnected(LoaderCallbackInterface.SUCCESS);
 
-        FPS = 24;
+        FPS = 15;
         recording = new ArrayList<>();
 //        mVideoView = findViewById(R.id.disp_vv);
 //        capturedImageView = findViewById(R.id.img_disp_iv);
@@ -201,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     @Override
                     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                         low_hue = (float) ((float)progress*2.55);
-                        Log.d("HUE VALUE ",""+low_hue);
+//                        Log.d("HUE VALUE ",""+low_hue);
                     }
 
                     @Override
@@ -492,7 +494,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         if (record)
             recording.add(matOutput);
-        Log.d("size of recording ",""+recording.size());
+//        Log.d("size of recording ",""+recording.size());
 //        if(matOutput!=null)
 //            Log.d("MATOUTPUT ","NOT NULL");
         return matOutput;// matOutput is returned for display
@@ -508,11 +510,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
     public void record_video(View view) {
-        WriteVideo writeVideo = new WriteVideo();
-        writeVideo.execute();
+        if (record) {
+            WriteVideo writeVideo = new WriteVideo();
+            writeVideo.execute();
+        }
+        record = !record;
     }
 
-    public class WriteVideo extends AsyncTask<String,String,String>
+    public static class WriteVideo extends AsyncTask<String,String,String>
     {
 
         ProgressDialog pd;
@@ -520,17 +525,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            pd = ProgressDialog.show(MainActivity.this,"Wait","Please wait for sometime");
+            pd = ProgressDialog.show(mContext,"Wait","Please wait for sometime");
         }
 
         @Override
         protected String doInBackground(String... strings) {
-            if (record)
-            {
 //            File sddir = Environment.getExternalStorageDirectory();
 //            File vrdir = new File(sddir, "android");
 //            File file = new File(vrdir, "video.avi");
-                String filename = Environment.getExternalStorageDirectory().getAbsolutePath()+"/android/video.avi";
+                String filename = Environment.getExternalStorageDirectory().getAbsolutePath()+"/android/video"+count+".avi";
+                count++;
                 VideoWriter vw = new VideoWriter(filename,VideoWriter.fourcc('M','J','P','G'),FPS,recording.get(0).size());
 
                 if (vw.isOpened()) {
@@ -542,8 +546,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     }
                 }
                 vw.release();
-            }
-            record = !record;
+                recording = new ArrayList<>();
             return null;
         }
 
