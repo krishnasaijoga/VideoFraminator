@@ -458,19 +458,19 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        matInput = inputFrame.rgba();   //  recieved frame as Mat object
+        matInput = inputFrame.rgba();   //  received frame as Mat object
 
         //  CameraBridgeViewBase by default works in landscape mode
         //  Here we are not converting it into potrait but the Mat object values are rotated anticlockwise for front camera
         Mat matT = matInput.t();//Transposes a Mat
 
         //  Flips a 2D array around vertical, horizontal, or both axes
-        //Flag to specify how to flip the array. 0 means flipping around the x-axis. Positive value (for example, 1) means flipping around y-axis. Negative value (for example, -1) means flipping around both axes
+        //  Flag to specify how to flip the array. 0 means flipping around the x-axis. Positive value (for example, 1) means flipping around y-axis. Negative value (for example, -1) means flipping around both axes
         if (camera)
             Core.flip(matInput.t(),matT,-1);// front-camera(-1),  back-camera(1)
         else Core.flip(matInput.t(),matT,1);// front-camera(-1),  back-camera(1)
 
-        Imgproc.resize(matT,matInput,matInput.size());//    resizes source according to given size and places it in destination
+        Imgproc.resize(matT,matInput,matInput.size());//    resize source according to given size and places it in destination
 
         try {
             hsv = new Mat(matInput.rows(),matInput.cols(),matInput.type());
@@ -496,7 +496,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Core.bitwise_and(matInput, matInput, res, mask_inv);//  Calculates the per-element bit-wise conjunction of two arrays or an array and a scalar
         //  dst(I) = src1(I) & src2(I) if mask(I) != 0
 
-        Mat result = new Mat(matInput.rows(),matInput.cols(),matInput.type());
         //Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
 
         Bitmap bmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);//    Creating a bitmap similar to Mat and with ARGB_8888 conguration
@@ -513,6 +512,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             mCvCamView.setCameraIndex(0); // front-camera(1),  back-camera(0)
         else mCvCamView.setCameraIndex(1);
         camera = !camera;
+        //mCvCamView.enableView();  // TODO:    Last minute addition check it once
     }
 }
 
