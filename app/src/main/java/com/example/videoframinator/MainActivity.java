@@ -1,28 +1,15 @@
 package com.example.videoframinator;
 
-import android.Manifest;
-import android.app.NativeActivity;
-import android.content.Context;
-import android.content.Intent;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.MediaMetadataRetriever;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.support.annotation.RequiresApi;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.WindowManager;
-import android.widget.ImageView;
 import android.widget.SeekBar;
-import android.widget.VideoView;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -34,21 +21,13 @@ import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
-import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.videoio.VideoCapture;
-import org.opencv.videoio.Videoio;
+import org.opencv.videoio.VideoWriter;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.annotation.Native;
-import java.nio.ByteBuffer;
+import java.sql.Time;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
@@ -58,6 +37,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     float low_hue,high_hue=255,low_sat=0,high_sat=255,low_value=0,high_value=255;
     Mat img = null,hsv=null;
     boolean camera = true;
+    boolean record = false;
+    List<Mat> recording;
+    double FPS;
+    Time start,end;
 
 
     private CameraBridgeViewBase mCvCamView;
@@ -108,7 +91,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         mCvCamView.setCameraIndex(1); // front-camera(1),  back-camera(0)
         mLoaderCallback2.onManagerConnected(LoaderCallbackInterface.SUCCESS);
 
-
+        FPS = 24;
+        recording = new ArrayList<>();
 //        mVideoView = findViewById(R.id.disp_vv);
 //        capturedImageView = findViewById(R.id.img_disp_iv);
 
@@ -496,23 +480,48 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Core.bitwise_and(matInput, matInput, res, mask_inv);//  Calculates the per-element bit-wise conjunction of two arrays or an array and a scalar
         //  dst(I) = src1(I) & src2(I) if mask(I) != 0
 
-        //Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
+        //  Imgproc.cvtColor(res,result,Imgproc.COLOR_BGR2RGB);
 
         Bitmap bmp = Bitmap.createBitmap(res.cols(), res.rows(), Bitmap.Config.ARGB_8888);//    Creating a bitmap similar to Mat and with ARGB_8888 conguration
         Utils.matToBitmap(res, bmp);//  Converts a mat to bitmap
         res.copyTo(matOutput);//    copies result into matOutput
 
-        if(matOutput!=null)
-            Log.d("MATOUTPUT ","NOT NULL");
+        if (record)
+            recording.add(matOutput);
+        Log.d("size of recording ",""+recording.size());
+//        if(matOutput!=null)
+//            Log.d("MATOUTPUT ","NOT NULL");
         return matOutput;// matOutput is returned for display
     }
 
     public void change_cam(View view) {
+        mCvCamView.disableView();   //  Before changing camera we have to first disable cam view
         if (camera)
             mCvCamView.setCameraIndex(0); // front-camera(1),  back-camera(0)
         else mCvCamView.setCameraIndex(1);
+        mCvCamView.enableView();
         camera = !camera;
-        //mCvCamView.enableView();  // TODO:    Last minute addition check it once
+    }
+
+    public void record_video(View view) {
+        if (record)
+        {
+//            File sddir = Environment.getExternalStorageDirectory();
+//            File vrdir = new File(sddir, "android");
+//            File file = new File(vrdir, "video.avi");
+            String filename = Environment.getExternalStorageDirectory().getAbsolutePath()+"/android/video.avi";
+            VideoWriter vw = new VideoWriter(filename,VideoWriter.fourcc('M','J','P','G'),FPS,recording.get(0).size());
+
+            if (vw.isOpened()) {
+                int i = 0;
+                while (i < recording.size()) {
+                    Mat x = recording.get(i);
+                    vw.write(x);
+                    i++;
+                }
+            }
+            vw.release();
+        }
+        record = !record;
     }
 }
-
