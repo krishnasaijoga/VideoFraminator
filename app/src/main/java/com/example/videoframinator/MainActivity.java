@@ -1,6 +1,9 @@
 package com.example.videoframinator;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -41,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     List<Mat> recording;
     double FPS;
     Time start,end;
+    Context mContext;
 
 
     private CameraBridgeViewBase mCvCamView;
@@ -504,24 +508,49 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     }
 
     public void record_video(View view) {
-        if (record)
-        {
+        WriteVideo writeVideo = new WriteVideo();
+        writeVideo.execute();
+    }
+
+    public class WriteVideo extends AsyncTask<String,String,String>
+    {
+
+        ProgressDialog pd;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pd = ProgressDialog.show(MainActivity.this,"Wait","Please wait for sometime");
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            if (record)
+            {
 //            File sddir = Environment.getExternalStorageDirectory();
 //            File vrdir = new File(sddir, "android");
 //            File file = new File(vrdir, "video.avi");
-            String filename = Environment.getExternalStorageDirectory().getAbsolutePath()+"/android/video.avi";
-            VideoWriter vw = new VideoWriter(filename,VideoWriter.fourcc('M','J','P','G'),FPS,recording.get(0).size());
+                String filename = Environment.getExternalStorageDirectory().getAbsolutePath()+"/android/video.avi";
+                VideoWriter vw = new VideoWriter(filename,VideoWriter.fourcc('M','J','P','G'),FPS,recording.get(0).size());
 
-            if (vw.isOpened()) {
-                int i = 0;
-                while (i < recording.size()) {
-                    Mat x = recording.get(i);
-                    vw.write(x);
-                    i++;
+                if (vw.isOpened()) {
+                    int i = 0;
+                    while (i < recording.size()) {
+                        Mat x = recording.get(i);
+                        vw.write(x);
+                        i++;
+                    }
                 }
+                vw.release();
             }
-            vw.release();
+            record = !record;
+            return null;
         }
-        record = !record;
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            pd.dismiss();
+        }
     }
 }
